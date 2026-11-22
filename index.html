@@ -9,38 +9,38 @@
     <style>
       :root {
         color-scheme: light dark;
-        --bg: #f6f6f4;
+        --bg: #f2eef9;
         --surface: #ffffff;
-        --surface-2: #ececea;
-        --text: #1c1c1e;
-        --muted: #6b6b70;
-        --line: #d9d9d4;
-        --accent: #16794a;
+        --surface-2: #e8dff5;
+        --text: #221a33;
+        --muted: #6e6287;
+        --line: #d6cbe9;
+        --accent: #6d3fc0;
         --accent-text: #ffffff;
         --danger: #c62f2f;
         --danger-text: #ffffff;
         --warn-bg: #fff4d6;
-        --selected: #1c1c1e;
+        --selected: #5a2ea6;
         --selected-text: #ffffff;
-        --log-bg: #111214;
-        --log-text: #d7f0dd;
+        --log-bg: #221538;
+        --log-text: #e8ddff;
       }
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #121214;
-          --surface: #1e1e20;
-          --surface-2: #2a2a2d;
-          --text: #f2f2f3;
-          --muted: #a1a1a6;
-          --line: #38383c;
-          --accent: #2ea86a;
+          --bg: #140f22;
+          --surface: #211a35;
+          --surface-2: #2f244a;
+          --text: #f2edff;
+          --muted: #aca0c9;
+          --line: #3f335e;
+          --accent: #8a6fe3;
           --accent-text: #ffffff;
           --danger: #d64545;
-          --selected: #f2f2f3;
-          --selected-text: #121214;
+          --selected: #ddd0ff;
+          --selected-text: #221538;
           --warn-bg: #3a3218;
-          --log-bg: #0a0a0b;
-          --log-text: #c9ecd3;
+          --log-bg: #0f0a1c;
+          --log-text: #d9cfff;
         }
       }
       * { box-sizing: border-box; }
@@ -186,9 +186,9 @@
         margin-right: 8px;
         vertical-align: middle;
       }
-      .status-dot.ready { background: #2ea86a; }
+      .status-dot.ready { background: var(--accent); }
       .status-dot.calling { background: #e0a100; animation: pulse 1.1s infinite; }
-      .status-dot.incall { background: #2ea86a; animation: pulse 1.6s infinite; }
+      .status-dot.incall { background: var(--accent); animation: pulse 1.6s infinite; }
       .status-dot.error { background: var(--danger); }
       @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
       @media (prefers-reduced-motion: reduce) { .status-dot { animation: none !important; } }
@@ -241,7 +241,7 @@
       .call-btn.end .sub { color: var(--danger-text); opacity: .85; }
       .call-btn.muted { background: var(--warn-bg); border-color: #d9b23c; }
       .call-btn.ringing { animation: ringpulse 1s infinite; border-color: var(--accent); }
-      @keyframes ringpulse { 0%,100%{ box-shadow: 0 0 0 0 rgba(46,168,106,.0);} 50%{ box-shadow: 0 0 0 6px rgba(46,168,106,.18);} }
+      @keyframes ringpulse { 0%,100%{ box-shadow: 0 0 0 0 rgba(109,63,192,.0);} 50%{ box-shadow: 0 0 0 6px rgba(109,63,192,.22);} }
       @media (prefers-reduced-motion: reduce) { .call-btn.ringing { animation: none; } }
 
       .hidden { display: none !important; }
@@ -292,7 +292,7 @@
     <main>
       <header class="page-head">
         <h1>ボイスリンク</h1>
-        <span class="version">v1.0.0</span>
+        <span class="version">v1.0.1</span>
       </header>
       <p class="lead">2人で同じ「あいことば」を入れて、片方が A、もう片方が B を選んでね。</p>
 
