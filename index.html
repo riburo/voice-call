@@ -1,0 +1,1183 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>通話テスト</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f6f6f4;
+        --surface: #ffffff;
+        --surface-2: #ececea;
+        --text: #1c1c1e;
+        --muted: #6b6b70;
+        --line: #d9d9d4;
+        --accent: #16794a;
+        --accent-text: #ffffff;
+        --danger: #c62f2f;
+        --danger-text: #ffffff;
+        --warn-bg: #fff4d6;
+        --selected: #1c1c1e;
+        --selected-text: #ffffff;
+        --log-bg: #111214;
+        --log-text: #d7f0dd;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #121214;
+          --surface: #1e1e20;
+          --surface-2: #2a2a2d;
+          --text: #f2f2f3;
+          --muted: #a1a1a6;
+          --line: #38383c;
+          --accent: #2ea86a;
+          --accent-text: #ffffff;
+          --danger: #d64545;
+          --selected: #f2f2f3;
+          --selected-text: #121214;
+          --warn-bg: #3a3218;
+          --log-bg: #0a0a0b;
+          --log-text: #c9ecd3;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      main {
+        max-width: 540px;
+        margin: 0 auto;
+        padding: 20px 16px 32px;
+      }
+      .lead {
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--muted);
+        margin: 0 0 20px;
+      }
+      .lead strong { color: var(--text); font-weight: 600; }
+
+      label.field-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+      input[type="text"] {
+        width: 100%;
+        font-size: 18px;
+        padding: 14px 14px;
+        border-radius: 12px;
+        border: 1.5px solid var(--line);
+        background: var(--surface);
+        color: var(--text);
+        min-height: 52px;
+        outline: none;
+      }
+      input[type="text"]:focus { border-color: var(--accent); }
+      input[type="text"]:disabled { opacity: .55; }
+
+      .side-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin: 18px 0 0;
+      }
+      .side-btn {
+        min-height: 60px;
+        font-size: 22px;
+        font-weight: 800;
+        border-radius: 14px;
+        border: 1.5px solid var(--line);
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
+      }
+      .side-btn small {
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .side-btn.selected {
+        background: var(--selected);
+        color: var(--selected-text);
+        border-color: var(--selected);
+      }
+      .side-btn.selected small { color: var(--selected-text); opacity: .75; }
+      .side-btn:disabled { opacity: .55; }
+
+      button { font-family: inherit; }
+      button:disabled { opacity: .45; cursor: not-allowed; }
+      button:not(:disabled) { cursor: pointer; }
+      button:not(:disabled):active { transform: scale(.98); }
+
+      .prepare-btn {
+        width: 100%;
+        margin-top: 14px;
+        min-height: 58px;
+        font-size: 18px;
+        font-weight: 800;
+        border: none;
+        border-radius: 14px;
+        background: var(--accent);
+        color: var(--accent-text);
+      }
+
+      .reset-btn {
+        width: 100%;
+        margin-top: 10px;
+        min-height: 50px;
+        font-size: 15px;
+        font-weight: 700;
+        border-radius: 14px;
+        border: 1.5px solid var(--line);
+        background: var(--surface);
+        color: var(--text);
+      }
+      .reset-btn small {
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .status-card {
+        margin-top: 22px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 18px 16px;
+        text-align: center;
+      }
+      .status-dot {
+        width: 10px; height: 10px; border-radius: 50%;
+        background: var(--muted);
+        display: inline-block;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+      .status-dot.ready { background: #2ea86a; }
+      .status-dot.calling { background: #e0a100; animation: pulse 1.1s infinite; }
+      .status-dot.incall { background: #2ea86a; animation: pulse 1.6s infinite; }
+      .status-dot.error { background: var(--danger); }
+      @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+      @media (prefers-reduced-motion: reduce) { .status-dot { animation: none !important; } }
+      #statusText {
+        font-size: 20px;
+        font-weight: 800;
+        vertical-align: middle;
+      }
+      #subStatus {
+        margin-top: 6px;
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+        word-break: break-all;
+      }
+      #timer {
+        margin-top: 4px;
+        font-size: 28px;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        display: none;
+      }
+
+      .call-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .call-btn {
+        min-height: 76px;
+        border-radius: 16px;
+        border: 1.5px solid var(--line);
+        background: var(--surface);
+        color: var(--text);
+        font-size: 18px;
+        font-weight: 800;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 10px 6px;
+      }
+      .call-btn .icon { font-size: 24px; line-height: 1; }
+      .call-btn .sub { font-size: 11px; font-weight: 500; color: var(--muted); }
+      .call-btn.call { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+      .call-btn.call .sub { color: var(--accent-text); opacity: .85; }
+      .call-btn.end { background: var(--danger); color: var(--danger-text); border-color: var(--danger); }
+      .call-btn.end .sub { color: var(--danger-text); opacity: .85; }
+      .call-btn.muted { background: var(--warn-bg); border-color: #d9b23c; }
+      .call-btn.ringing { animation: ringpulse 1s infinite; border-color: var(--accent); }
+      @keyframes ringpulse { 0%,100%{ box-shadow: 0 0 0 0 rgba(46,168,106,.0);} 50%{ box-shadow: 0 0 0 6px rgba(46,168,106,.18);} }
+      @media (prefers-reduced-motion: reduce) { .call-btn.ringing { animation: none; } }
+
+      .hidden { display: none !important; }
+
+      .log-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 26px 0 8px;
+      }
+      .log-head h2 { font-size: 14px; margin: 0; font-weight: 700; }
+      .log-clear {
+        min-height: 36px;
+        padding: 6px 12px;
+        font-size: 13px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--text);
+      }
+      #log {
+        background: var(--log-bg);
+        color: var(--log-text);
+        border-radius: 12px;
+        padding: 12px 12px;
+        height: 220px;
+        overflow-y: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12.5px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      #log .time { opacity: .6; }
+      #log .err { color: #ff9a9a; }
+
+      .note {
+        margin-top: 16px;
+        font-size: 12.5px;
+        line-height: 1.7;
+        color: var(--muted);
+      }
+      .note li { margin: 2px 0; }
+      ul.note { padding-left: 18px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="lead">2人だけの音声通話テスト。<strong>2人で同じ「あいことば」</strong>を入れて、<strong>片方が A、もう片方が B</strong> を選んでね。アカウントも連絡先もなし。相手のインカムが Bluetooth イヤホンマイクとして繋がっていれば、そのまま声が出入りするよ。</p>
+
+      <!-- Setup -->
+      <div id="setupArea">
+        <label class="field-label" for="passphrase">あいことば</label>
+        <input type="text" id="passphrase" placeholder="例：あしたはれる" autocomplete="off" autocapitalize="off" />
+
+        <div class="side-row" role="group" aria-label="自分の側を選ぶ">
+          <button type="button" class="side-btn" id="sideA" aria-pressed="false">A<small>わたしは A</small></button>
+          <button type="button" class="side-btn" id="sideB" aria-pressed="false">B<small>わたしは B</small></button>
+        </div>
+
+        <button type="button" class="prepare-btn" id="prepareBtn">準備する</button>
+        <button type="button" class="reset-btn hidden" id="resetBtn">やめる<small>接続を切って、あいことばを変えられるよ</small></button>
+      </div>
+
+      <!-- Status -->
+      <div class="status-card">
+        <div><span class="status-dot" id="statusDot"></span><span id="statusText">まだ準備してない</span></div>
+        <div id="timer">00:00</div>
+        <div id="subStatus">あいことばと A / B を決めて「準備する」を押してね</div>
+      </div>
+
+      <!-- Call controls -->
+      <div class="call-grid hidden" id="callControls">
+        <button type="button" class="call-btn call" id="callBtn">
+          <span class="icon" aria-hidden="true">📞</span>発信<span class="sub">相手を呼ぶ</span>
+        </button>
+        <button type="button" class="call-btn" id="answerBtn" disabled>
+          <span class="icon" aria-hidden="true">✅</span>応答<span class="sub">着信に出る</span>
+        </button>
+        <button type="button" class="call-btn" id="muteBtn" disabled>
+          <span class="icon" aria-hidden="true">🎙️</span><span id="muteLabel">ミュート</span><span class="sub" id="muteSub">自分の声を消す</span>
+        </button>
+        <button type="button" class="call-btn end" id="endBtn" disabled>
+          <span class="icon" aria-hidden="true">✕</span>終了<span class="sub">通話を切る</span>
+        </button>
+      </div>
+
+      <audio id="remoteAudio" autoplay playsinline></audio>
+
+      <!-- Log -->
+      <div class="log-head">
+        <h2>ログ</h2>
+        <button type="button" class="log-clear" id="clearLogBtn">ログを消す</button>
+      </div>
+      <div id="log" aria-live="polite"></div>
+
+      <ul class="note">
+        <li>2台ともこのページを開いて、ネットに繋がっている必要があるよ。</li>
+        <li>同じ側（A同士・B同士）を2台で使うと繋がらないよ。</li>
+        <li>マイクの許可を求められたら「許可」してね。Bluetooth のインカム／イヤホンマイクはスマホ側で先に接続しておいてね。</li>
+        <li>準備したあとに終わりにしたいときや、あいことばを変えたいときは「やめる」を押してね。通話中は「終了」で切ると待機中に戻るよ。「終了」も「やめる」も、相手側も一緒に切れるよ。</li>
+        <li>通話中に接続が切れたら、自動で再接続を試みるよ（最大5回）。完全に閉じているときは着信しないよ。</li>
+      </ul>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script>
+      (function () {
+        var passphraseEl = document.getElementById('passphrase');
+        var sideABtn = document.getElementById('sideA');
+        var sideBBtn = document.getElementById('sideB');
+        var prepareBtn = document.getElementById('prepareBtn');
+        var resetBtn = document.getElementById('resetBtn');
+        var statusDot = document.getElementById('statusDot');
+        var statusText = document.getElementById('statusText');
+        var subStatus = document.getElementById('subStatus');
+        var timerEl = document.getElementById('timer');
+        var callControls = document.getElementById('callControls');
+        var callBtn = document.getElementById('callBtn');
+        var answerBtn = document.getElementById('answerBtn');
+        var muteBtn = document.getElementById('muteBtn');
+        var muteLabel = document.getElementById('muteLabel');
+        var muteSub = document.getElementById('muteSub');
+        var endBtn = document.getElementById('endBtn');
+        var remoteAudio = document.getElementById('remoteAudio');
+        var logEl = document.getElementById('log');
+        var clearLogBtn = document.getElementById('clearLogBtn');
+
+        var mySide = null; // 'a' or 'b'
+        var myId = null;
+        var remoteId = null;
+        var peer = null;
+        var localStream = null;
+        var currentCall = null;
+        var incomingCall = null;
+        var isMuted = false;
+        var timerInterval = null;
+        var callStartAt = null;
+
+        // --- Auto-reconnect state (only while a call session is live) ---
+        var inSession = false; // true after a call first connects, until 終了 / やめる
+        var intentionalEnd = false; // true when the user pressed 終了 / やめる
+        var isReconnecting = false;
+        var reconnectAttempts = 0;
+        var reconnectDelays = [3000, 5000, 8000, 13000, 20000];
+        var reconnectTimer = null; // wait before the next attempt
+        var reconnectAttemptTimer = null; // timeout waiting for an attempt to connect
+        var iceWatchTimer = null; // ~8s grace period after 'disconnected'
+        var isUnstable = false;
+        var pendingReconnectAfterSignaling = false;
+        var signalingReady = true;
+        var currentCallConnected = false;
+
+        // --- Hangup signalling via data connection ---
+        var dataConn = null; // peer.connect data connection to remoteId
+        var remoteHangup = false; // true once {type:"hangup"} received from remote
+        var localHangup = false; // true once we sent hangup (終了 / やめる)
+
+        function nowTime() {
+          var d = new Date();
+          function p(n) { return (n < 10 ? '0' : '') + n; }
+          return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+        }
+
+        function log(msg, isError) {
+          var line = document.createElement('div');
+          if (isError) line.className = 'err';
+          var t = document.createElement('span');
+          t.className = 'time';
+          t.textContent = '[' + nowTime() + '] ';
+          line.appendChild(t);
+          line.appendChild(document.createTextNode(msg));
+          logEl.appendChild(line);
+          logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function setStatus(main, sub, dotClass) {
+          statusText.textContent = main;
+          if (typeof sub === 'string') subStatus.textContent = sub;
+          statusDot.className = 'status-dot' + (dotClass ? ' ' + dotClass : '');
+        }
+
+        // Simple hash: FNV-1a + djb2 combined -> base36 short code
+        function hashToCode(str) {
+          var h1 = 0x811c9dc5;
+          for (var i = 0; i < str.length; i++) {
+            h1 ^= str.charCodeAt(i);
+            h1 = Math.imul(h1, 0x01000193) >>> 0;
+          }
+          var h2 = 5381;
+          for (var j = str.length - 1; j >= 0; j--) {
+            h2 = ((h2 << 5) + h2 + str.charCodeAt(j)) >>> 0;
+          }
+          var combined = (h1.toString(36) + h2.toString(36)).replace(/[^a-z0-9]/g, '');
+          // Keep it short but reasonably unique: up to 10 chars
+          return combined.slice(0, 10);
+        }
+
+        function selectSide(side) {
+          mySide = side;
+          sideABtn.classList.toggle('selected', side === 'a');
+          sideBBtn.classList.toggle('selected', side === 'b');
+          sideABtn.setAttribute('aria-pressed', side === 'a' ? 'true' : 'false');
+          sideBBtn.setAttribute('aria-pressed', side === 'b' ? 'true' : 'false');
+        }
+        sideABtn.addEventListener('click', function () { selectSide('a'); log('自分の側を A にしたよ'); });
+        sideBBtn.addEventListener('click', function () { selectSide('b'); log('自分の側を B にしたよ'); });
+
+        clearLogBtn.addEventListener('click', function () { logEl.innerHTML = ''; });
+
+        function ensureLocalStream() {
+          if (localStream) return Promise.resolve(localStream);
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            log('マイクの許可が必要（このブラウザではマイクが使えないみたい）', true);
+            setStatus('マイクの許可が必要', 'ブラウザの設定でマイクを許可してね', 'error');
+            return Promise.reject(new Error('getUserMedia unavailable'));
+          }
+          return navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+          }).then(function (stream) {
+            localStream = stream;
+            log('マイクの準備ができたよ');
+            // Re-apply mute state if toggled before stream existed
+            var track = stream.getAudioTracks()[0];
+            if (track && isMuted) track.enabled = false;
+            return stream;
+          }).catch(function (err) {
+            log('マイクの許可が必要', true);
+            setStatus('マイクの許可が必要', 'ブラウザの許可ダイアログで「許可」を押して、もう一度試してね', 'error');
+            throw err;
+          });
+        }
+
+        function startTimer() {
+          callStartAt = Date.now();
+          timerEl.style.display = 'block';
+          timerEl.textContent = '00:00';
+          if (timerInterval) clearInterval(timerInterval);
+          timerInterval = setInterval(function () {
+            var sec = Math.floor((Date.now() - callStartAt) / 1000);
+            var m = Math.floor(sec / 60), s = sec % 60;
+            timerEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+          }, 500);
+        }
+        function stopTimer() {
+          if (timerInterval) clearInterval(timerInterval);
+          timerInterval = null;
+          callStartAt = null;
+          timerEl.style.display = 'none';
+        }
+
+        function updateButtons(state) {
+          // state: 'idle' | 'incoming' | 'calling' | 'incall' | 'reconnecting'
+          if (state === 'idle') {
+            callBtn.disabled = false;
+            answerBtn.disabled = true;
+            answerBtn.classList.remove('ringing');
+            muteBtn.disabled = true;
+            endBtn.disabled = true;
+          } else if (state === 'incoming') {
+            callBtn.disabled = true;
+            answerBtn.disabled = false;
+            answerBtn.classList.add('ringing');
+            muteBtn.disabled = true;
+            endBtn.disabled = false;
+          } else if (state === 'calling') {
+            callBtn.disabled = true;
+            answerBtn.disabled = true;
+            answerBtn.classList.remove('ringing');
+            muteBtn.disabled = false;
+            endBtn.disabled = false;
+          } else if (state === 'incall') {
+            callBtn.disabled = true;
+            answerBtn.disabled = true;
+            answerBtn.classList.remove('ringing');
+            muteBtn.disabled = false;
+            endBtn.disabled = false;
+          } else if (state === 'reconnecting') {
+            callBtn.disabled = true;
+            answerBtn.disabled = true;
+            answerBtn.classList.remove('ringing');
+            muteBtn.disabled = false;
+            endBtn.disabled = false;
+          }
+        }
+
+        function clearIceWatch() {
+          if (iceWatchTimer) { clearTimeout(iceWatchTimer); iceWatchTimer = null; }
+        }
+        function clearReconnectTimers() {
+          if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+          if (reconnectAttemptTimer) { clearTimeout(reconnectAttemptTimer); reconnectAttemptTimer = null; }
+        }
+        function cancelReconnect() {
+          clearIceWatch();
+          clearReconnectTimers();
+          isReconnecting = false;
+          reconnectAttempts = 0;
+          isUnstable = false;
+          pendingReconnectAfterSignaling = false;
+        }
+
+        // ---------- Data connection for hangup ----------
+        function wireDataConnection(conn) {
+          conn.on('data', function (data) {
+            if (data && data.type === 'hangup') {
+              handleRemoteHangup();
+            }
+          });
+          conn.on('close', function () {
+            if (dataConn === conn) dataConn = null;
+          });
+          conn.on('error', function () {
+            // Fallback to media-only detection; nothing to do.
+          });
+        }
+        function ensureDataConnection() {
+          if (!peer || peer.destroyed || !remoteId) return null;
+          if (dataConn && dataConn.open) return dataConn;
+          try {
+            var conn = peer.connect(remoteId, { reliable: true });
+            if (!conn) return dataConn;
+            dataConn = conn;
+            wireDataConnection(conn);
+            return conn;
+          } catch (e) {
+            return dataConn;
+          }
+        }
+        function sendHangup() {
+          localHangup = true;
+          try {
+            var conn = ensureDataConnection();
+            if (conn) {
+              if (conn.open) {
+                try { conn.send({ type: 'hangup' }); log('相手に終了を伝えたよ'); } catch (e) {}
+              } else {
+                // Wait briefly for open, then send; media close is the fallback.
+                conn.on('open', function () {
+                  try { conn.send({ type: 'hangup' }); } catch (e) {}
+                });
+              }
+            }
+          } catch (e) {}
+        }
+        function handleRemoteHangup() {
+          if (remoteHangup) return;
+          remoteHangup = true;
+          log('相手が終了したよ');
+          // End session without reconnecting, UI back to standby.
+          endSessionLocally('相手が終了した', '相手が通話を終了したよ。待機中に戻ったよ');
+        }
+
+        // Close media calls only, keeping localStream for a possible reconnect.
+        function closeMediaCallsOnly() {
+          if (currentCall) {
+            var cc = currentCall;
+            currentCall = null;
+            currentCallConnected = false;
+            try { cc.close(); } catch (e) {}
+          }
+          if (incomingCall) {
+            var ic = incomingCall;
+            incomingCall = null;
+            try { ic.close(); } catch (e) {}
+          }
+          if (remoteAudio.srcObject) remoteAudio.srcObject = null;
+        }
+
+        // End the session locally (no reconnect). Used for manual end and remote hangup.
+        function endSessionLocally(statusMain, reason) {
+          cancelReconnect();
+          inSession = false;
+          intentionalEnd = true;
+          closeMediaCallsOnly();
+          if (localStream) {
+            localStream.getTracks().forEach(function (t) { t.stop(); });
+            localStream = null;
+          }
+          isMuted = false;
+          muteBtn.classList.remove('muted');
+          muteLabel.textContent = 'ミュート';
+          muteSub.textContent = '自分の声を消す';
+          stopTimer();
+          if (peer && !peer.destroyed) {
+            if (statusMain === '相手が終了した') {
+              setStatus('相手が終了した', '自分のID: ' + myId + ' ／ 相手のID: ' + remoteId, 'ready');
+            } else {
+              setStatus('待機中', '自分のID: ' + myId + ' ／ 相手のID: ' + remoteId, 'ready');
+            }
+            updateButtons('idle');
+          }
+          if (reason) log(reason);
+        }
+
+        function cleanupCall(reason) {
+          // Manual end path (終了 button already sent hangup before calling this in its handler,
+          // but keep flags consistent if called directly).
+          intentionalEnd = true;
+          endSessionLocally(null, reason);
+        }
+
+        // ---------- Auto-reconnect ----------
+        function scheduleNextReconnect() {
+          if (!inSession || intentionalEnd || remoteHangup || localHangup) return;
+          if (reconnectAttempts >= 5) {
+            isReconnecting = false;
+            clearReconnectTimers();
+            setStatus('再接続できなかった。手動で発信してね', '「発信」を押すと、もう一度かけ直せるよ', 'error');
+            log('再接続できなかったよ。手動で発信してね', true);
+            // Keep session flags cleared so a manual call starts fresh.
+            inSession = false;
+            if (localStream) {
+              localStream.getTracks().forEach(function (t) { t.stop(); });
+              localStream = null;
+            }
+            stopTimer();
+            updateButtons('idle');
+            // Restore 発信 availability by returning to idle state above.
+            return;
+          }
+          var delay = reconnectDelays[Math.max(0, reconnectAttempts - 1)] || 20000;
+          // Intervals grow between attempts: 3s -> 5s -> 8s -> 13s -> 20s.
+          log('次の再接続まで ' + Math.round(delay / 1000) + '秒待つね');
+          if (reconnectTimer) clearTimeout(reconnectTimer);
+          reconnectTimer = setTimeout(function () {
+            reconnectTimer = null;
+            attemptReconnect();
+          }, delay);
+        }
+
+        function attemptReconnect() {
+          if (!inSession || intentionalEnd || remoteHangup || localHangup) return;
+          if (!peer || peer.destroyed) { scheduleNextReconnect(); return; }
+          // Requirement 4: wait for signaling to come back first.
+          if (!signalingReady || (peer && peer.disconnected)) {
+            pendingReconnectAfterSignaling = true;
+            log('合図用サーバーへの再接続を待っているよ');
+            try { peer.reconnect(); } catch (e) {}
+            return;
+          }
+          reconnectAttempts++;
+          isReconnecting = true;
+          var label = '再接続中…（' + reconnectAttempts + '回目）';
+          setStatus(label, '相手と自動で繋ぎ直しているよ', 'calling');
+          updateButtons('reconnecting');
+          log(label);
+
+          // Close the dead media call, keep the mic stream.
+          closeMediaCallsOnly();
+          ensureDataConnection();
+
+          ensureLocalStream().then(function (stream) {
+            if (!inSession || intentionalEnd || remoteHangup || localHangup) return;
+            // Glare: if an incoming reconnect call already became currentCall and connected, don't place another.
+            if (currentCall && currentCallConnected) return;
+            var call;
+            try { call = peer.call(remoteId, stream); } catch (e) { call = null; }
+            if (!call) {
+              log('再接続の発信ができなかったよ', true);
+              scheduleNextReconnect();
+              return;
+            }
+            wireCall(call);
+            // Timeout: if no stream within 12s, treat this attempt as failed.
+            if (reconnectAttemptTimer) clearTimeout(reconnectAttemptTimer);
+            reconnectAttemptTimer = setTimeout(function () {
+              reconnectAttemptTimer = null;
+              if (!inSession || !isReconnecting) return;
+              if (currentCall === call && !currentCallConnected) {
+                log('再接続が時間内に繋がらなかったよ');
+                try { call.close(); } catch (e) {}
+                if (currentCall === call) { currentCall = null; }
+                scheduleNextReconnect();
+              }
+            }, 12000);
+          }).catch(function () {
+            log('マイクが使えなくて再接続できなかったよ', true);
+            scheduleNextReconnect();
+          });
+        }
+
+        function startReconnect(reason) {
+          if (!inSession || intentionalEnd || remoteHangup || localHangup) return;
+          if (isReconnecting) return;
+          clearIceWatch();
+          isUnstable = false;
+          isReconnecting = true;
+          reconnectAttempts = 0;
+          if (reason) log(reason);
+          // First attempt starts immediately; backoff applies between attempts.
+          attemptReconnect();
+        }
+
+        function onConnectionRecovered() {
+          if (!isUnstable) return;
+          clearIceWatch();
+          isUnstable = false;
+          if (!inSession || intentionalEnd || remoteHangup) return;
+          setStatus('通話中', '相手と繋がったよ', 'incall');
+          updateButtons('incall');
+          log('接続が戻ったよ');
+        }
+
+        function onConnectionUnstable() {
+          if (!inSession || intentionalEnd || remoteHangup || localHangup) return;
+          if (isReconnecting) return;
+          if (!isUnstable) {
+            isUnstable = true;
+            setStatus('接続が不安定…様子を見てる', '切れずに戻るか、少し待って見ているよ', 'calling');
+            log('接続が不安定になったよ。様子を見てるね');
+          }
+          clearIceWatch();
+          iceWatchTimer = setTimeout(function () {
+            iceWatchTimer = null;
+            if (!inSession || intentionalEnd || remoteHangup || localHangup) return;
+            // Still unstable after ~8s -> reconnect.
+            log('接続が戻らなかったから、再接続するね');
+            isUnstable = false;
+            startReconnect();
+          }, 8000);
+        }
+
+        function onConnectionFailed() {
+          if (!inSession || intentionalEnd || remoteHangup || localHangup) return;
+          clearIceWatch();
+          isUnstable = false;
+          log('接続が切れたよ');
+          startReconnect();
+        }
+
+        function monitorPeerConnection(call) {
+          var pc = null;
+          try { pc = call.peerConnection; } catch (e) {}
+          if (!pc) return;
+          if (pc.__mewMonitored) return;
+          try { pc.__mewMonitored = true; } catch (e) {}
+          function check() {
+            if (currentCall !== call) return;
+            var ice = '';
+            var conn = '';
+            try { ice = pc.iceConnectionState || ''; } catch (e) {}
+            try { conn = pc.connectionState || ''; } catch (e) {}
+            if (conn === 'connected' || ice === 'connected' || ice === 'completed') {
+              if (isUnstable) onConnectionRecovered();
+            } else if (conn === 'failed' || ice === 'failed') {
+              onConnectionFailed();
+            } else if (conn === 'disconnected' || ice === 'disconnected') {
+              onConnectionUnstable();
+            } else if (conn === 'closed' || ice === 'closed') {
+              if (inSession && !intentionalEnd && !remoteHangup && !localHangup) onConnectionFailed();
+            }
+          }
+          try { pc.addEventListener('iceconnectionstatechange', check); } catch (e) {}
+          try { pc.addEventListener('connectionstatechange', check); } catch (e) {}
+          // Some browsers expose on* handlers as fallback.
+          try {
+            var prevIce = pc.oniceconnectionstatechange;
+            pc.oniceconnectionstatechange = function (ev) { if (prevIce) { try { prevIce.call(pc, ev); } catch (e2) {} } check(); };
+          } catch (e) {}
+        }
+
+        function wireCall(call) {
+          currentCall = call;
+          currentCallConnected = false;
+          // Try monitoring now; PeerJS may create peerConnection lazily, retry shortly.
+          monitorPeerConnection(call);
+          setTimeout(function () { if (currentCall === call) monitorPeerConnection(call); }, 300);
+          setTimeout(function () { if (currentCall === call) monitorPeerConnection(call); }, 1200);
+          call.on('stream', function (remoteStream) {
+            if (currentCall !== call) {
+              // Glare loser: a different call already won, ignore this stream.
+              try { call.close(); } catch (e) {}
+              return;
+            }
+            var wasReconnecting = isReconnecting;
+            var wasInSession = inSession;
+            currentCallConnected = true;
+            clearIceWatch();
+            clearReconnectTimers();
+            isUnstable = false;
+            remoteAudio.srcObject = remoteStream;
+            var p = remoteAudio.play();
+            if (p && p.catch) p.catch(function () {});
+            monitorPeerConnection(call);
+            ensureDataConnection();
+            if (wasReconnecting && wasInSession) {
+              isReconnecting = false;
+              reconnectAttempts = 0;
+              setStatus('通話中', '相手と繋がったよ', 'incall');
+              log('再接続したよ');
+              updateButtons('incall');
+              if (!callStartAt) startTimer();
+            } else {
+              inSession = true;
+              intentionalEnd = false;
+              remoteHangup = false;
+              localHangup = false;
+              isReconnecting = false;
+              reconnectAttempts = 0;
+              setStatus('通話中', '相手と繋がったよ', 'incall');
+              log('通話が始まったよ');
+              updateButtons('incall');
+              startTimer();
+            }
+          });
+          call.on('close', function () {
+            var wasCurrent = (currentCall === call);
+            if (wasCurrent) {
+              currentCall = null;
+              currentCallConnected = false;
+            }
+            if (!wasCurrent) return;
+            if (!inSession) return;
+            if (intentionalEnd || remoteHangup || localHangup) {
+              // Session already being ended locally / by remote hangup.
+              return;
+            }
+            if (isReconnecting) {
+              // A reconnect attempt closed before connecting; schedule next if not already scheduled.
+              if (!reconnectTimer && !reconnectAttemptTimer) scheduleNextReconnect();
+              return;
+            }
+            // Unexpected close with no hangup = network drop -> reconnect (fallback when ICE events miss it).
+            log('通話が終わったよ');
+            startReconnect();
+          });
+          call.on('error', function (err) {
+            log('通話でエラーが起きたよ：' + (err && err.type ? err.type : err), true);
+            if (inSession && isReconnecting && !intentionalEnd && !remoteHangup) {
+              if (reconnectAttemptTimer) { clearTimeout(reconnectAttemptTimer); reconnectAttemptTimer = null; }
+              scheduleNextReconnect();
+            }
+          });
+        }
+
+        // End everything: close any call, disconnect from the server,
+        // and go back to the setup state so the passphrase can be changed.
+        function resetAll() {
+          // If in a call, tell the remote first so both sides end cleanly.
+          if (inSession || currentCall) {
+            try { sendHangup(); } catch (e) {}
+          }
+          intentionalEnd = true;
+          cancelReconnect();
+          inSession = false;
+          if (typeof window.MewCall !== 'undefined' && window.MewCall && typeof window.MewCall.keepAlive === 'function') {
+            try { window.MewCall.keepAlive(false); } catch (e) {}
+          }
+          if (dataConn) {
+            try { dataConn.close(); } catch (e) {}
+            dataConn = null;
+          }
+          remoteHangup = false;
+          localHangup = false;
+          signalingReady = true;
+          if (currentCall) {
+            try { currentCall.close(); } catch (e) {}
+            currentCall = null;
+          }
+          currentCallConnected = false;
+          if (incomingCall) {
+            try { incomingCall.close(); } catch (e) {}
+            incomingCall = null;
+          }
+          if (remoteAudio.srcObject) {
+            remoteAudio.srcObject = null;
+          }
+          if (localStream) {
+            localStream.getTracks().forEach(function (t) { t.stop(); });
+            localStream = null;
+          }
+          stopTimer();
+          if (peer) {
+            try { peer.destroy(); } catch (e) {}
+            peer = null;
+          }
+          myId = null;
+          remoteId = null;
+          isMuted = false;
+          muteBtn.classList.remove('muted');
+          muteLabel.textContent = 'ミュート';
+          muteSub.textContent = '自分の声を消す';
+
+          prepareBtn.disabled = false;
+          prepareBtn.textContent = '準備する';
+          passphraseEl.disabled = false;
+          passphraseEl.value = '';
+          sideABtn.disabled = false;
+          sideBBtn.disabled = false;
+          callControls.classList.add('hidden');
+          resetBtn.classList.add('hidden');
+          updateButtons('idle');
+          setStatus('まだ準備してない', 'あいことばと A / B を決めて「準備する」を押してね', '');
+          log('終わりにしたよ。あいことばを変えたいときは、新しい言葉を入れて「準備する」を押し直してね');
+          passphraseEl.focus();
+        }
+        resetBtn.addEventListener('click', resetAll);
+
+        function handlePeerError(err) {
+          var type = err && err.type ? err.type : '';
+          var msg;
+          if (type === 'peer-unavailable') {
+            if (inSession && isReconnecting && !intentionalEnd && !remoteHangup) {
+              log('相手にまだ繋がらなかったよ。再接続を続けるね', true);
+              if (reconnectAttemptTimer) { clearTimeout(reconnectAttemptTimer); reconnectAttemptTimer = null; }
+              scheduleNextReconnect();
+              return;
+            }
+            msg = '相手がまだ準備できてないみたい';
+            setStatus('相手がまだ準備できてないみたい', '相手も同じあいことばで「準備する」を押したか確認してね', 'error');
+            // Calling failed; go back to idle if we were calling
+            if (!currentCall || !remoteAudio.srcObject) {
+              stopTimer();
+              if (peer && !peer.destroyed) updateButtons('idle');
+            }
+          } else if (type === 'unavailable-id') {
+            msg = 'このIDは使用中。同じ側（A/B）を2台で使ってない？';
+            setStatus('このIDは使用中', '同じ側（A/B）を2台で使ってない？ 片方を反対側にしてね', 'error');
+          } else if (type === 'network' || type === 'server-error') {
+            msg = 'サーバーに繋がらない。ネット接続を確認してね';
+            setStatus('サーバーに繋がらない', 'ネット接続を確認して、ページを再読み込みして試してね', 'error');
+          } else if (type === 'browser-incompatible') {
+            msg = 'このブラウザでは通話が使えないみたい';
+            setStatus('このブラウザでは使えないみたい', 'Chrome など最新のブラウザで開いてね', 'error');
+          } else {
+            msg = 'エラーが起きたよ' + (type ? '（' + type + '）' : '');
+            setStatus('エラーが起きたよ', type || '', 'error');
+          }
+          log(msg, true);
+        }
+
+        prepareBtn.addEventListener('click', function () {
+          var word = passphraseEl.value.trim();
+          if (!word) {
+            log('あいことばを入れてね', true);
+            setStatus('あいことばを入れてね', '2人で決めた同じ言葉を入れてね', 'error');
+            passphraseEl.focus();
+            return;
+          }
+          if (!mySide) {
+            log('A か B を選んでね', true);
+            setStatus('A か B を選んでね', '片方が A、もう片方が B だよ', 'error');
+            return;
+          }
+          if (typeof Peer === 'undefined') {
+            log('サーバーに繋がらない。ネット接続を確認してね', true);
+            setStatus('サーバーに繋がらない', 'ネット接続を確認して、ページを再読み込みしてね', 'error');
+            return;
+          }
+
+          var code = hashToCode(word);
+          myId = 'mewvcall-' + code + '-' + mySide;
+          remoteId = 'mewvcall-' + code + '-' + (mySide === 'a' ? 'b' : 'a');
+
+          log('あいことばからコードを作ったよ：' + code);
+          log('自分のID：' + myId);
+          log('相手のID：' + remoteId);
+          setStatus('サーバーに接続中…', '自分のID: ' + myId, 'calling');
+
+          prepareBtn.disabled = true;
+          passphraseEl.disabled = true;
+          sideABtn.disabled = true;
+          sideBBtn.disabled = true;
+          resetBtn.classList.remove('hidden');
+
+          peer = new Peer(myId);
+          signalingReady = false;
+          inSession = false;
+          intentionalEnd = false;
+          remoteHangup = false;
+          localHangup = false;
+
+          peer.on('open', function (id) {
+            var wasPendingReconnect = pendingReconnectAfterSignaling;
+            signalingReady = true;
+            pendingReconnectAfterSignaling = false;
+            if (typeof window.MewCall !== 'undefined' && window.MewCall && typeof window.MewCall.keepAlive === 'function') {
+              try { window.MewCall.keepAlive(true); } catch (e) {}
+            }
+            ensureDataConnection();
+            if (inSession && (wasPendingReconnect || isReconnecting)) {
+              log('合図用サーバーに繋ぎ直したよ。再接続を続けるね');
+              // Resume reconnect now that signaling is back.
+              if (isReconnecting && !reconnectTimer && !currentCallConnected) {
+                // If attempts were already counted, continue with next attempt.
+                attemptReconnect();
+              }
+              return;
+            }
+            if (inSession) {
+              setStatus('通話中', '相手と繋がったよ', 'incall');
+              updateButtons('incall');
+              return;
+            }
+            log('準備できたよ。相手の発信を待てるし、こっちからも発信できるよ');
+            setStatus('待機中', '自分のID: ' + id + ' ／ 相手のID: ' + remoteId, 'ready');
+            callControls.classList.remove('hidden');
+            updateButtons('idle');
+            prepareBtn.textContent = '準備できた ✓';
+          });
+
+          peer.on('connection', function (conn) {
+            // Incoming data connection from the remote.
+            if (dataConn && dataConn !== conn) {
+              try { dataConn.close(); } catch (e) {}
+            }
+            dataConn = conn;
+            wireDataConnection(conn);
+          });
+
+          peer.on('call', function (call) {
+            // Session live: this is a reconnect call -> auto-answer, no 応答 wait.
+            if (inSession && !intentionalEnd && !remoteHangup && !localHangup) {
+              // Glare: both sides calling at once. Keep the first one that arrived locally:
+              // if we already have a connected/current outgoing call, the side tie-break decides.
+              if (currentCall && currentCall !== call) {
+                if (mySide === 'a') {
+                  // A's outgoing wins: close the extra incoming.
+                  log('再接続がぶつかったから、余った方を閉じるね');
+                  try { call.close(); } catch (e) {}
+                  return;
+                } else {
+                  // B keeps the incoming (A's call) and drops its own outgoing.
+                  log('再接続がぶつかったから、先に届いた方を生かすね');
+                  var old = currentCall;
+                  currentCall = null;
+                  currentCallConnected = false;
+                  if (reconnectAttemptTimer) { clearTimeout(reconnectAttemptTimer); reconnectAttemptTimer = null; }
+                  try { old.close(); } catch (e) {}
+                }
+              }
+              log('再接続の着信があったよ。自動で応答するね');
+              ensureLocalStream().then(function (stream) {
+                if (!inSession || intentionalEnd || remoteHangup) { try { call.close(); } catch (e) {} return; }
+                try { call.answer(stream); } catch (e) { log('自動応答できなかったよ', true); scheduleNextReconnect(); return; }
+                wireCall(call);
+                updateButtons('reconnecting');
+              }).catch(function () {
+                log('マイクが使えなくて自動応答できなかったよ', true);
+                try { call.close(); } catch (e) {}
+              });
+              call.on('error', function (err) {
+                log('着信でエラーが起きたよ：' + (err && err.type ? err.type : err), true);
+              });
+              return;
+            }
+            log('着信があったよ。「応答」を押すと通話が始まるよ');
+            incomingCall = call;
+            setStatus('着信中…', '「応答」を押すと通話が始まるよ', 'calling');
+            updateButtons('incoming');
+            // If the caller hangs up before answer
+            call.on('close', function () {
+              if (incomingCall === call && !currentCall) {
+                incomingCall = null;
+                if (remoteHangup) return;
+                log('相手が着信をキャンセルしたみたい');
+                setStatus('待機中', '自分のID: ' + myId + ' ／ 相手のID: ' + remoteId, 'ready');
+                updateButtons('idle');
+              }
+            });
+            call.on('error', function (err) {
+              log('着信でエラーが起きたよ：' + (err && err.type ? err.type : err), true);
+            });
+          });
+
+          peer.on('error', handlePeerError);
+
+          peer.on('disconnected', function () {
+            signalingReady = false;
+            log('サーバーとの接続が切れたよ。再接続を試みるね');
+            if (inSession && !intentionalEnd && !remoteHangup) {
+              pendingReconnectAfterSignaling = true;
+              if (!isReconnecting) {
+                setStatus('接続が切れた…', '合図用サーバーに再接続を試みているよ', 'calling');
+              }
+            } else {
+              setStatus('接続が切れた…', '再接続を試みているよ', 'calling');
+            }
+            try { peer.reconnect(); } catch (e) {}
+          });
+        });
+
+        callBtn.addEventListener('click', function () {
+          if (!peer) return;
+          intentionalEnd = false;
+          remoteHangup = false;
+          localHangup = false;
+          cancelReconnect();
+          ensureDataConnection();
+          log('発信するね：' + remoteId);
+          setStatus('発信中…', '相手が「応答」を押すのを待っているよ', 'calling');
+          updateButtons('calling');
+          ensureLocalStream().then(function (stream) {
+            var call = peer.call(remoteId, stream);
+            if (!call) {
+              log('発信できなかったよ', true);
+              setStatus('待機中', '自分のID: ' + myId + ' ／ 相手のID: ' + remoteId, 'ready');
+              updateButtons('idle');
+              return;
+            }
+            wireCall(call);
+          }).catch(function () {
+            if (peer && !peer.destroyed) {
+              setStatus('マイクの許可が必要', '許可してからもう一度「発信」を押してね', 'error');
+              updateButtons('idle');
+            }
+          });
+        });
+
+        answerBtn.addEventListener('click', function () {
+          if (!incomingCall) return;
+          intentionalEnd = false;
+          remoteHangup = false;
+          localHangup = false;
+          ensureDataConnection();
+          log('応答するね');
+          setStatus('接続中…', '相手と繋いでいるよ', 'calling');
+          var callToAnswer = incomingCall;
+          incomingCall = null;
+          ensureLocalStream().then(function (stream) {
+            callToAnswer.answer(stream);
+            wireCall(callToAnswer);
+            updateButtons('calling');
+          }).catch(function () {
+            try { callToAnswer.close(); } catch (e) {}
+            setStatus('マイクの許可が必要', '許可してから、もう一度着信してもらってね', 'error');
+            updateButtons('idle');
+          });
+        });
+
+        muteBtn.addEventListener('click', function () {
+          isMuted = !isMuted;
+          if (localStream) {
+            var track = localStream.getAudioTracks()[0];
+            if (track) track.enabled = !isMuted;
+          }
+          muteBtn.classList.toggle('muted', isMuted);
+          muteLabel.textContent = isMuted ? 'ミュート中' : 'ミュート';
+          muteSub.textContent = isMuted ? 'タップで声を戻す' : '自分の声を消す';
+          log(isMuted ? 'ミュートにしたよ（自分の声は相手に届かないよ）' : 'ミュートを解除したよ');
+        });
+
+        endBtn.addEventListener('click', function () {
+          log('終了するね');
+          intentionalEnd = true;
+          // Tell the remote via data connection first, then close media and end the session (no reconnect).
+          try { sendHangup(); } catch (e) {}
+          cancelReconnect();
+          // Small delay so the hangup has a chance to flush when the data conn was already open;
+          // if it was not open, sendHangup queues it on open and media close remains the fallback.
+          cleanupCall('通話を終了したよ');
+        });
+
+        log('ページを開いたよ。あいことばと A / B を決めて「準備する」を押してね');
+      })();
+    </script>
+  </body>
+</html>
