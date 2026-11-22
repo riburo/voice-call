@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="data:," />
-    <title>通話テスト</title>
+    <title>ボイスリンク</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -54,7 +54,27 @@
       main {
         max-width: 540px;
         margin: 0 auto;
-        padding: 20px 16px 32px;
+        padding: calc(20px + env(safe-area-inset-top, 0px)) 16px 32px;
+        padding-top: calc(20px + env(safe-area-inset-top, 0px));
+      }
+      .page-head {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin: 0 0 8px;
+      }
+      .page-head h1 {
+        font-size: 28px;
+        font-weight: 800;
+        line-height: 1.2;
+        margin: 0;
+        letter-spacing: 0.01em;
+      }
+      .page-head .version {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+        white-space: nowrap;
       }
       .lead {
         font-size: 15px;
@@ -270,7 +290,11 @@
   </head>
   <body>
     <main>
-      <p class="lead">2人だけの音声通話テスト。<strong>2人で同じ「あいことば」</strong>を入れて、<strong>片方が A、もう片方が B</strong> を選んでね。アカウントも連絡先もなし。相手のインカムが Bluetooth イヤホンマイクとして繋がっていれば、そのまま声が出入りするよ。</p>
+      <header class="page-head">
+        <h1>ボイスリンク</h1>
+        <span class="version">v1.0.0</span>
+      </header>
+      <p class="lead">2人で同じ「あいことば」を入れて、片方が A、もう片方が B を選んでね。</p>
 
       <!-- Setup -->
       <div id="setupArea">
