@@ -6,9 +6,23 @@
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="data:," />
     <title>ボイスリンク</title>
+    <script>
+      (function () {
+        var theme = 'light';
+        try {
+          var saved = localStorage.getItem('voicelink-theme');
+          if (saved === 'dark' || saved === 'light') {
+            theme = saved;
+          } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            theme = 'dark';
+          }
+        } catch (e) {}
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
     <style>
       :root {
-        color-scheme: light dark;
+        color-scheme: light;
         --bg: #f2eef9;
         --surface: #ffffff;
         --surface-2: #e8dff5;
@@ -25,8 +39,8 @@
         --log-bg: #221538;
         --log-text: #e8ddff;
       }
-      @media (prefers-color-scheme: dark) {
-        :root {
+      :root[data-theme="dark"] {
+          color-scheme: dark;
           --bg: #140f22;
           --surface: #211a35;
           --surface-2: #2f244a;
@@ -41,7 +55,6 @@
           --warn-bg: #3a3218;
           --log-bg: #0f0a1c;
           --log-text: #d9cfff;
-        }
       }
       * { box-sizing: border-box; }
       html, body { margin: 0; padding: 0; }
@@ -59,9 +72,55 @@
       }
       .page-head {
         display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 0 0 8px;
+      }
+      .page-head-left {
+        display: flex;
         align-items: baseline;
         gap: 8px;
-        margin: 0 0 8px;
+        min-width: 0;
+      }
+      .theme-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 40px;
+        padding: 6px 10px 6px 6px;
+        border-radius: 999px;
+        border: 1.5px solid var(--line);
+        background: var(--surface);
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .theme-toggle-track {
+        position: relative;
+        width: 40px;
+        height: 22px;
+        border-radius: 999px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+        transition: background .18s ease;
+      }
+      .theme-toggle-thumb {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--accent);
+        transition: transform .18s ease;
+      }
+      :root[data-theme="dark"] .theme-toggle-track { background: var(--accent); border-color: var(--accent); }
+      :root[data-theme="dark"] .theme-toggle-thumb { transform: translateX(18px); background: #ffffff; }
+      @media (prefers-reduced-motion: reduce) {
+        .theme-toggle-track, .theme-toggle-thumb { transition: none; }
       }
       .page-head h1 {
         font-size: 28px;
@@ -291,8 +350,14 @@
   <body>
     <main>
       <header class="page-head">
-        <h1>ボイスリンク</h1>
-        <span class="version">v1.0.1</span>
+        <div class="page-head-left">
+          <h1>ボイスリンク</h1>
+          <span class="version">v1.0.2</span>
+        </div>
+        <button type="button" class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="ダークモード">
+          <span class="theme-toggle-track" aria-hidden="true"><span class="theme-toggle-thumb"></span></span>
+          <span id="themeToggleLabel">ライト</span>
+        </button>
       </header>
       <p class="lead">2人で同じ「あいことば」を入れて、片方が A、もう片方が B を選んでね。</p>
 
@@ -373,6 +438,44 @@
         var remoteAudio = document.getElementById('remoteAudio');
         var logEl = document.getElementById('log');
         var clearLogBtn = document.getElementById('clearLogBtn');
+        var themeToggle = document.getElementById('themeToggle');
+        var themeToggleLabel = document.getElementById('themeToggleLabel');
+
+        // --- Theme toggle (light / dark, saved) ---
+        function syncThemeToggle() {
+          var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+          if (themeToggle) themeToggle.setAttribute('aria-checked', isDark ? 'true' : 'false');
+          if (themeToggleLabel) themeToggleLabel.textContent = isDark ? 'ダーク' : 'ライト';
+        }
+        function applyTheme(theme, save) {
+          document.documentElement.setAttribute('data-theme', theme);
+          syncThemeToggle();
+          if (save) {
+            try { localStorage.setItem('voicelink-theme', theme); } catch (e) {}
+          }
+        }
+        syncThemeToggle();
+        if (themeToggle) {
+          themeToggle.addEventListener('click', function () {
+            var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            applyTheme(next, true);
+          });
+        }
+        // If the user has never chosen manually, follow live system changes.
+        try {
+          var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+          if (mq) {
+            var onMqChange = function (e) {
+              var savedTheme = null;
+              try { savedTheme = localStorage.getItem('voicelink-theme'); } catch (err) {}
+              if (savedTheme !== 'dark' && savedTheme !== 'light') {
+                applyTheme(e.matches ? 'dark' : 'light', false);
+              }
+            };
+            if (mq.addEventListener) mq.addEventListener('change', onMqChange);
+            else if (mq.addListener) mq.addListener(onMqChange);
+          }
+        } catch (e) {}
 
         var mySide = null; // 'a' or 'b'
         var myId = null;
