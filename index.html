@@ -356,7 +356,7 @@
       <header class="page-head">
         <div class="page-head-left">
           <h1>ボイスリンク</h1>
-          <span class="version">v1.0.3</span>
+          <span class="version">v1.0.4</span>
         </div>
         <button type="button" class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="ダークモード">
           <span class="theme-toggle-track" aria-hidden="true"><span class="theme-toggle-thumb"></span></span>
@@ -415,7 +415,7 @@
         <li>2台ともこのページを開いて、ネットに繋がっている必要があるよ。</li>
         <li>同じ側（A同士・B同士）を2台で使うと繋がらないよ。</li>
         <li>マイクの許可を求められたら「許可」してね。Bluetooth のインカム／イヤホンマイクはスマホ側で先に接続しておいてね。</li>
-        <li>準備したあとに終わりにしたいときや、あいことばを変えたいときは「やめる」を押してね。通話中は「終了」で切ると待機中に戻るよ。「終了」も「やめる」も、相手側も一緒に切れるよ。</li>
+        <li>準備したあとに終わりにしたいときや、あいことばを変えたいときは「やめる」を押してね。通話中は「終了」で切ると待機中に戻るよ。「終了」も「やめる」も、相手側も一緒に切れるよ。待機中のまま10分何もないと、自動で終わりになるよ。</li>
         <li>通話中に接続が切れたら、自動で再接続を試みるよ（最大5回）。完全に閉じているときは着信しないよ。</li>
       </ul>
     </main>
@@ -510,6 +510,33 @@
         var dataConn = null; // peer.connect data connection to remoteId
         var remoteHangup = false; // true once {type:"hangup"} received from remote
         var localHangup = false; // true once we sent hangup (終了 / やめる)
+
+        // ---------- Standby auto-end: 10 minutes with nothing happening ----------
+        var STANDBY_LIMIT_MS = 10 * 60 * 1000;
+        var standbyTimer = null;
+        var standbyDeadline = 0;
+        function startStandbyTimer() {
+          clearStandbyTimer();
+          standbyDeadline = Date.now() + STANDBY_LIMIT_MS;
+          standbyTimer = setTimeout(fireStandbyTimeout, STANDBY_LIMIT_MS);
+        }
+        function clearStandbyTimer() {
+          if (standbyTimer) { clearTimeout(standbyTimer); standbyTimer = null; }
+          standbyDeadline = 0;
+        }
+        function fireStandbyTimeout() {
+          standbyTimer = null;
+          standbyDeadline = 0;
+          if (!peer || peer.destroyed || inSession || currentCall) return;
+          if (incomingCall) { startStandbyTimer(); return; }
+          log('10分何もなかったから、自動で終わりにするね');
+          resetAll(true);
+        }
+        document.addEventListener('visibilitychange', function () {
+          if (!document.hidden && standbyDeadline && Date.now() >= standbyDeadline) {
+            fireStandbyTimeout();
+          }
+        });
 
         function nowTime() {
           var d = new Date();
@@ -744,6 +771,7 @@
               setStatus('待機中', '自分のID: ' + myId + ' ／ 相手のID: ' + remoteId, 'ready');
             }
             updateButtons('idle');
+            startStandbyTimer();
           }
           if (reason) log(reason);
         }
@@ -771,6 +799,7 @@
             }
             stopTimer();
             updateButtons('idle');
+            startStandbyTimer();
             // Restore 発信 availability by returning to idle state above.
             return;
           }
@@ -948,6 +977,7 @@
               if (!callStartAt) startTimer();
             } else {
               inSession = true;
+              clearStandbyTimer();
               intentionalEnd = false;
               remoteHangup = false;
               localHangup = false;
@@ -991,13 +1021,14 @@
 
         // End everything: close any call, disconnect from the server,
         // and go back to the setup state so the passphrase can be changed.
-        function resetAll() {
+        function resetAll(auto) {
           // If in a call, tell the remote first so both sides end cleanly.
           if (inSession || currentCall) {
             try { sendHangup(); } catch (e) {}
           }
           intentionalEnd = true;
           cancelReconnect();
+          clearStandbyTimer();
           inSession = false;
           if (typeof window.MewCall !== 'undefined' && window.MewCall && typeof window.MewCall.keepAlive === 'function') {
             try { window.MewCall.keepAlive(false); } catch (e) {}
@@ -1047,10 +1078,14 @@
           resetBtn.classList.add('hidden');
           updateButtons('idle');
           setStatus('まだ準備してない', 'あいことばと A / B を決めて「準備する」を押してね', '');
-          log('終わりにしたよ。あいことばを変えたいときは、新しい言葉を入れて「準備する」を押し直してね');
+          if (auto === true) {
+            log('自動で終わりにしたよ。あいことばを変えたいときは、新しい言葉を入れて「準備する」を押し直してね');
+          } else {
+            log('終わりにしたよ。あいことばを変えたいときは、新しい言葉を入れて「準備する」を押し直してね');
+          }
           passphraseEl.focus();
         }
-        resetBtn.addEventListener('click', resetAll);
+        resetBtn.addEventListener('click', function () { resetAll(false); });
 
         function handlePeerError(err) {
           var type = err && err.type ? err.type : '';
@@ -1153,6 +1188,7 @@
             callControls.classList.remove('hidden');
             updateButtons('idle');
             prepareBtn.textContent = '準備できた ✓';
+            startStandbyTimer();
           });
 
           peer.on('connection', function (conn) {
@@ -1202,6 +1238,7 @@
             }
             log('着信があったよ。「応答」を押すと通話が始まるよ');
             incomingCall = call;
+            clearStandbyTimer();
             setStatus('着信中…', '「応答」を押すと通話が始まるよ', 'calling');
             updateButtons('incoming');
             // If the caller hangs up before answer
@@ -1212,6 +1249,7 @@
                 log('相手が着信をキャンセルしたみたい');
                 setStatus('待機中', '自分のID: ' + myId + ' ／ 相手のID: ' + remoteId, 'ready');
                 updateButtons('idle');
+                startStandbyTimer();
               }
             });
             call.on('error', function (err) {
@@ -1238,6 +1276,7 @@
 
         callBtn.addEventListener('click', function () {
           if (!peer) return;
+          clearStandbyTimer();
           intentionalEnd = false;
           remoteHangup = false;
           localHangup = false;
@@ -1252,6 +1291,7 @@
               log('発信できなかったよ', true);
               setStatus('待機中', '自分のID: ' + myId + ' ／ 相手のID: ' + remoteId, 'ready');
               updateButtons('idle');
+              startStandbyTimer();
               return;
             }
             wireCall(call);
@@ -1259,12 +1299,14 @@
             if (peer && !peer.destroyed) {
               setStatus('マイクの許可が必要', '許可してからもう一度「発信」を押してね', 'error');
               updateButtons('idle');
+              startStandbyTimer();
             }
           });
         });
 
         answerBtn.addEventListener('click', function () {
           if (!incomingCall) return;
+          clearStandbyTimer();
           intentionalEnd = false;
           remoteHangup = false;
           localHangup = false;
@@ -1281,6 +1323,7 @@
             try { callToAnswer.close(); } catch (e) {}
             setStatus('マイクの許可が必要', '許可してから、もう一度着信してもらってね', 'error');
             updateButtons('idle');
+            startStandbyTimer();
           });
         });
 
