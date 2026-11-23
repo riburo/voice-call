@@ -67,14 +67,18 @@
       main {
         max-width: 540px;
         margin: 0 auto;
-        padding: calc(20px + env(safe-area-inset-top, 0px)) 16px 32px;
-        padding-top: calc(20px + env(safe-area-inset-top, 0px));
+        padding: 20px 16px 32px;
+        /* WebView では env(safe-area-inset-top) が 0 を返すことがあるため、
+           固定値 36px との大きい方を取り、さらに余白を足して
+           ステータスバーにヘッダーが食い込まないようにする */
+        padding-top: calc(max(env(safe-area-inset-top, 0px), 36px) + 12px);
       }
       .page-head {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
+        gap: 8px 12px;
+        flex-wrap: wrap;
         margin: 0 0 8px;
       }
       .page-head-left {
@@ -352,7 +356,7 @@
       <header class="page-head">
         <div class="page-head-left">
           <h1>ボイスリンク</h1>
-          <span class="version">v1.0.2</span>
+          <span class="version">v1.0.3</span>
         </div>
         <button type="button" class="theme-toggle" id="themeToggle" role="switch" aria-checked="false" aria-label="ダークモード">
           <span class="theme-toggle-track" aria-hidden="true"><span class="theme-toggle-thumb"></span></span>
