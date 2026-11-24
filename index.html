@@ -52,7 +52,7 @@
         --selected: #5a2ea6;
         --selected-text: #ffffff;
         --log-bg: #221538;
-        --log-text: #e8ddff;
+        --log-text: #a6e22e;
       }
       :root[data-theme="dark"] {
           color-scheme: dark;
@@ -69,7 +69,7 @@
           --selected-text: #221538;
           --warn-bg: #3a3218;
           --log-bg: #0f0a1c;
-          --log-text: #d9cfff;
+          --log-text: #a6e22e;
       }
       * { box-sizing: border-box; }
       html, body { margin: 0; padding: 0; }
@@ -473,6 +473,13 @@
             try { localStorage.setItem('voicelink-theme', theme); } catch (e) {}
           }
         }
+        // アプリ側から端末設定の変更をその場で受ける受け口（v4）。
+        // MainActivity.onConfigurationChanged が呼ぶ。本体の設定が変わった瞬間に
+        // トグルの手動選択を上書きして端末設定に合わせる（連動優先の仕様）。
+        // ブラウザ版では MewCall がないので従来どおり matchMedia の変更検知を使う。
+        window.__applySystemTheme = function (dark) {
+          applyTheme(dark ? 'dark' : 'light', false);
+        };
         syncThemeToggle();
         if (themeToggle) {
           themeToggle.addEventListener('click', function () {
