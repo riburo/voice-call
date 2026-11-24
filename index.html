@@ -9,12 +9,27 @@
     <script>
       (function () {
         var theme = 'light';
+        // アプリ内では端末のダーク設定を初期値にする（MewCall 経由）。
+        // 理由：loadDataWithBaseURL 読み込みでは localStorage がページ差し替え時に
+        // 保持されず、WebView の matchMedia も端末設定を反映しないため。
+        // ブラウザ版では MewCall がないので従来どおり（保存値→matchMedia）。
+        var fromApp = null;
         try {
-          var saved = localStorage.getItem('voicelink-theme');
-          if (saved === 'dark' || saved === 'light') {
-            theme = saved;
-          } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            theme = 'dark';
+          if (typeof window.MewCall !== 'undefined' && window.MewCall
+              && typeof window.MewCall.isSystemDarkMode === 'function') {
+            fromApp = window.MewCall.isSystemDarkMode() ? 'dark' : 'light';
+          }
+        } catch (e) {}
+        try {
+          if (fromApp) {
+            theme = fromApp;
+          } else {
+            var saved = localStorage.getItem('voicelink-theme');
+            if (saved === 'dark' || saved === 'light') {
+              theme = saved;
+            } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              theme = 'dark';
+            }
           }
         } catch (e) {}
         document.documentElement.setAttribute('data-theme', theme);
